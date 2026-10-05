@@ -1,0 +1,10 @@
+{
+  "name": "Ovqat CPFC.ai",
+  "short_name": "Ovqat",
+  "description": "Ovqat CPFC.ai — сканер калорийности еды по фото с Gemini AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f4",
+  "theme_color": "#d97706",
+  "icons": []
+}
