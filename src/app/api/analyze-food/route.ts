@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateFoodJson } from "@/lib/gemini";
 import { generateFoodJsonViaQwen } from "@/lib/qwen";
+import { generateFoodJsonViaOllama } from "@/lib/ollama";
 import { UploadError, validateUpload } from "@/lib/image-validate";
 
 export const runtime = "nodejs";
-export const maxDuration = 90;
+export const maxDuration = 300;
 
-/** Активный движок: "qwen" (по умолчанию) или "gemini" (код оставлен, выключен). */
-function activeProvider(): "qwen" | "gemini" {
-  return (process.env.AI_PROVIDER || "qwen").trim().toLowerCase() === "gemini"
-    ? "gemini"
-    : "qwen";
+export type Provider = "ollama" | "qwen" | "gemini";
+
+/** Активный движок: "ollama" (локальный Qwen, по умолчанию), "qwen" (HF), "gemini" (запасной). */
+function activeProvider(): Provider {
+  const v = (process.env.AI_PROVIDER || "ollama").trim().toLowerCase();
+  return v === "gemini" || v === "qwen" ? v : "ollama";
 }
 
 export async function POST(req: NextRequest) {
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-  } else {
+  } else if (provider === "qwen") {
     const hfToken = (process.env.HF_TOKEN || "").trim();
     if (!hfToken) {
       return NextResponse.json(
@@ -33,6 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
   }
+  // ollama: ключей не нужно, нужен запущенный `ollama serve` + скачанная модель
 
   let file: File | null = null;
   try {
@@ -59,12 +62,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Не удалось прочитать фото." }, { status: 400 });
   }
 
-  const engine = provider === "gemini" ? "Gemini" : "Qwen";
+  const engine = provider === "gemini" ? "Gemini" : provider === "qwen" ? "Qwen" : "Qwen локально";
   try {
-    const { json, model } =
-      provider === "gemini"
-        ? await generateFoodJson((process.env.GEMINI_API_KEY || "").trim(), base64, mime)
-        : await generateFoodJsonViaQwen((process.env.HF_TOKEN || "").trim(), base64, mime);
+    let json: unknown;
+    let model: string;
+    if (provider === "gemini") {
+      const r = await generateFoodJson((process.env.GEMINI_API_KEY || "").trim(), base64, mime);
+      json = r.json;
+      model = r.model;
+    } else if (provider === "qwen") {
+      const r = await generateFoodJsonViaQwen((process.env.HF_TOKEN || "").trim(), base64, mime);
+      json = r.json;
+      model = r.model;
+    } else {
+      const r = await generateFoodJsonViaOllama(
+        base64,
+        process.env.OLLAMA_HOST || "http://localhost:11434",
+        process.env.OLLAMA_MODEL || "qwen3-vl:2b"
+      );
+      json = r.json;
+      model = r.model;
+    }
     const p = json as Record<string, unknown>;
     if (typeof p?.is_food !== "boolean") {
       return NextResponse.json({ error: `${engine} вернул некорректный ответ. Попробуйте ещё раз.` }, { status: 502 });
@@ -75,6 +93,8 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : "";
     if (/bad_token/i.test(msg))
       return NextResponse.json({ error: msg.replace(/^bad_token:\s*/, "") }, { status: 401 });
+    if (/^(model_missing|ollama_down|ollama_timeout):/.test(msg))
+      return NextResponse.json({ error: msg.replace(/^[a-z_]+:\s*/, "") }, { status: 503 });
     if (/429|quota|rate|лимит/i.test(msg))
       return NextResponse.json(
         { error: `Превышен лимит ${engine}. Подождите минуту и попробуйте снова.` },

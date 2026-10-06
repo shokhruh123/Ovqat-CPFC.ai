@@ -110,7 +110,7 @@ export default function Home() {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    const timer = setTimeout(() => ctrl.abort(), 55000);
+    const timer = setTimeout(() => ctrl.abort(), 280000);
 
     const res = await analyzeFood(file, ctrl.signal);
     clearTimeout(timer);
@@ -386,7 +386,7 @@ export default function Home() {
             {stage === "loading" && (
               <>
                 <div className="pb-1 pt-3">
-                  <p className="kicker">Gemini думает</p>
+                  <p className="kicker">ИИ думает</p>
                   <h2 className="font-display mt-2 flex items-center gap-2 text-[26px] font-bold tracking-tight">
                     Сканируем блюдо
                     <span className="inline-flex gap-1" aria-hidden>
@@ -418,7 +418,7 @@ export default function Home() {
                         <ScanLine className="absolute inset-0 m-auto size-6 text-white" />
                       </div>
                       <p className="text-sm font-bold text-white">
-                        Определяем блюдо, вес и КБЖУ
+                        ИИ сканирует блюдо…
                       </p>
                     </div>
                   </div>
