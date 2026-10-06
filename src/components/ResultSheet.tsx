@@ -135,6 +135,9 @@ export function ResultSheet({
                   <p className="text-sm leading-relaxed text-stone-700 dark:text-stone-200">
                     {result.short_advice}
                   </p>
+                  <p className="mt-2 text-[10px] uppercase tracking-wider text-[var(--faint)]">
+                    Анализ: {result._provider === "gemini" ? "Gemini" : "Qwen 0.8B"}
+                  </p>
                 </div>
               </>
             )}
