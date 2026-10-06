@@ -39,6 +39,8 @@ export async function generateFoodJsonViaOllama(
         model,
         stream: false,
         format: "json",
+        // Отключаем thinking: иначе весь лимит токенов уходит на размышления и content пустой
+        think: false,
         messages: [
           {
             role: "user",
@@ -46,9 +48,9 @@ export async function generateFoodJsonViaOllama(
             images: [base64],
           },
         ],
-        // num_gpu: 0 — полностью на CPU: на видеокартах с 4 ГБ VRAM
-        // модель иначе не стартует (out-of-memory в CUDA)
-        options: { temperature: 0.2, num_predict: 1024, num_ctx: 8192, num_gpu: 0 },
+        // num_predict 2048: маленькая модель сначала долго "думает" (thinking),
+        // ответ-JSON появляется только после размышлений
+        options: { temperature: 0.2, num_predict: 2048, num_ctx: 8192, num_gpu: 0 },
       }),
       signal: ctrl.signal,
     });

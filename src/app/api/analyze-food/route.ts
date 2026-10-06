@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       const r = await generateFoodJsonViaOllama(
         base64,
         process.env.OLLAMA_HOST || "http://localhost:11434",
-        process.env.OLLAMA_MODEL || "qwen3-vl:2b"
+        process.env.OLLAMA_MODEL || "qwen3-vl:2b-instruct"
       );
       json = r.json;
       model = r.model;
