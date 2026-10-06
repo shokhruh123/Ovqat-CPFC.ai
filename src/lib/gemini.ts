@@ -27,10 +27,25 @@ export const SYSTEM_INSTRUCTION = `Ты — профессиональный н�
     "fats_g": number,
     "carbs_g": number
   },
+  "variants": {
+    "lean": {
+      "label": "string (например: Домашний)",
+      "calories": number,
+      "macronutrients": { "proteins_g": number, "fats_g": number, "carbs_g": number },
+      "note": "string (до 120 символов: чем версия легче)"
+    },
+    "rich": {
+      "label": "string (например: Чайхана)",
+      "calories": number,
+      "macronutrients": { "proteins_g": number, "fats_g": number, "carbs_g": number },
+      "note": "string (до 120 символов: чем версия жирнее)"
+    }
+  },
   "recommendation_verdict": "Рекомендуется" | "С осторожностью" | "Не рекомендуется",
   "short_advice": "string (краткий совет на русском языке до 200 символов)"
 }
-Если на фото нет еды, установи "is_food": false и дай понятное объяснение в "short_advice".`;
+ВАЖНО ПРО РАЗБРОС: одно и то же блюдо бывает очень разным. "lean" — облегчённая домашняя версия (меньше масла и жира, постное мясо, без фритюра и обильного соуса). "rich" — жирная версия из чайханы, кафе или фастфуда (много масла, курдюк, казан, фритюр, соусы). Калории и БЖУ вариантов считай на тот же вес порции. Если способ приготовления почти не влияет на калорийность (яблоко, огурец, варёное яйцо), варианты должны быть близки к основной оценке — не выдумывай разброс.
+Если на фото нет еды, установи "is_food": false, дай понятное объяснение в "short_advice" и опусти поле "variants".`;
 
 export function cleanJson(raw: string): string {
   return raw
