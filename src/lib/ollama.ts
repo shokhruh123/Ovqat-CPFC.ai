@@ -47,6 +47,8 @@ async function once(
   model: string,
   timeoutMs: number
 ): Promise<OllamaResult> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(`${host.replace(/\/$/, "")}/api/chat`, {
       method: "POST",
