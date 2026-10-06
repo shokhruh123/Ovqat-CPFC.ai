@@ -28,6 +28,26 @@ export interface OpenRouterResult {
 
 export async function generateFoodJsonViaOpenRouter(
   apiKey: string,
+  models: string[],
+  base64: string,
+  mime: string
+): Promise<OpenRouterResult> {
+  let lastErr = "no model answered";
+  for (const model of models) {
+    try {
+      return await once(apiKey, model, base64, mime);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      lastErr = `${model}: ${msg.slice(0, 100)}`;
+      if (/bad_token|no_credits/i.test(msg)) throw e;
+      continue;
+    }
+  }
+  throw new Error(lastErr);
+}
+
+async function once(
+  apiKey: string,
   model: string,
   base64: string,
   mime: string

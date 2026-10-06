@@ -87,9 +87,13 @@ export async function POST(req: NextRequest) {
       json = r.json;
       model = r.model;
     } else if (provider === "openrouter") {
+      const models = [
+        (process.env.OPENROUTER_MODEL || "").trim(),
+        (process.env.OPENROUTER_MODEL_FALLBACK || "").trim(),
+      ].filter(Boolean);
       const r = await generateFoodJsonViaOpenRouter(
         (process.env.OPENROUTER_KEY || "").trim(),
-        (process.env.OPENROUTER_MODEL || "qwen/qwen2.5-vl-72b-instruct:free").trim(),
+        models.length > 0 ? models : ["thinkingmachines/inkling-small:free"],
         base64,
         mime
       );
