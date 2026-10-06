@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Flame, Beef, Droplet, Wheat, Sparkles, TriangleAlert, House, Store } from "lucide-react";
+import { X, Flame, Beef, Droplet, Wheat, Sparkles, TriangleAlert, House, Store, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FoodAnalysisResult, FoodVariant } from "@/lib/types";
@@ -70,7 +70,12 @@ export function ResultSheet({
               <h2 className="font-display text-xl font-bold leading-tight text-white md:text-2xl">
                 {result.food_name}
               </h2>
-              <p className="text-sm text-white/80">≈ {result.estimated_weight_g} г порция</p>
+              <p className="mt-1.5 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-bold text-white backdrop-blur">
+                  <Scale className="size-4" />≈ {result.estimated_weight_g} г
+                </span>
+                <span className="text-xs text-white/70">вес порции</span>
+              </p>
             </div>
           </div>
 
@@ -119,6 +124,7 @@ export function ResultSheet({
                     lean={result.variants.lean}
                     rich={result.variants.rich}
                     estimate={result.calories}
+                    weight={result.estimated_weight_g}
                   />
                 )}
 
@@ -148,7 +154,7 @@ export function ResultSheet({
   );
 }
 
-function VariantRange({ lean, rich, estimate }: { lean: FoodVariant; rich: FoodVariant; estimate: number }) {
+function VariantRange({ lean, rich, estimate, weight }: { lean: FoodVariant; rich: FoodVariant; estimate: number; weight: number }) {
   const lo = Math.min(lean.calories, rich.calories);
   const hi = Math.max(lean.calories, rich.calories);
   const span = Math.max(1, hi - lo);
@@ -158,7 +164,7 @@ function VariantRange({ lean, rich, estimate }: { lean: FoodVariant; rich: FoodV
   return (
     <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
       <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">
-        Вилка калорийности
+        Вилка калорийности <span className="normal-case font-medium">• на ≈ {weight} г</span>
       </p>
       <p className="mb-3 text-[11px] leading-snug text-[var(--faint)]">
         {narrow
