@@ -136,7 +136,7 @@ export function ResultSheet({
                     {result.short_advice}
                   </p>
                   <p className="mt-2 text-[10px] uppercase tracking-wider text-[var(--faint)]">
-                    Анализ: {result._provider === "gemini" ? "Gemini" : result._provider === "qwen" ? "Qwen 0.8B" : "Qwen локально"}
+                    Анализ: {result._provider === "gemini" ? "Gemini" : result._provider === "openrouter" ? "OpenRouter" : result._provider === "qwen" ? "Qwen 0.8B" : "Qwen локально"}
                   </p>
                 </div>
               </>

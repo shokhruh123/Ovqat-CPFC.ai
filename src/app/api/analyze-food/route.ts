@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateFoodJson } from "@/lib/gemini";
 import { generateFoodJsonViaQwen } from "@/lib/qwen";
 import { generateFoodJsonViaOllama } from "@/lib/ollama";
+import { generateFoodJsonViaOpenRouter } from "@/lib/openrouter";
 import { UploadError, validateUpload } from "@/lib/image-validate";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-export type Provider = "ollama" | "qwen" | "gemini";
+export type Provider = "gemini" | "ollama" | "qwen" | "openrouter";
 
-/** Активный движок: "ollama" (локальный Qwen, по умолчанию), "qwen" (HF), "gemini" (запасной). */
+/** Активный движок: "gemini" (основной), остальные — запасные. */
 function activeProvider(): Provider {
-  const v = (process.env.AI_PROVIDER || "ollama").trim().toLowerCase();
-  return v === "gemini" || v === "qwen" ? v : "ollama";
+  const v = (process.env.AI_PROVIDER || "gemini").trim().toLowerCase();
+  if (v === "ollama" || v === "qwen" || v === "openrouter") return v;
+  return "gemini";
 }
 
 export async function POST(req: NextRequest) {
@@ -36,6 +38,15 @@ export async function POST(req: NextRequest) {
     }
   }
   // ollama: ключей не нужно, нужен запущенный `ollama serve` + скачанная модель
+  if (provider === "openrouter") {
+    const key = (process.env.OPENROUTER_KEY || "").trim();
+    if (!key) {
+      return NextResponse.json(
+        { error: "OPENROUTER_KEY не настроен. Бесплатный ключ: https://openrouter.ai/keys" },
+        { status: 500 }
+      );
+    }
+  }
 
   let file: File | null = null;
   try {
@@ -62,7 +73,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Не удалось прочитать фото." }, { status: 400 });
   }
 
-  const engine = provider === "gemini" ? "Gemini" : provider === "qwen" ? "Qwen" : "Qwen локально";
+  const engine =
+    provider === "gemini" ? "Gemini" : provider === "openrouter" ? "OpenRouter" : provider === "qwen" ? "Qwen" : "Qwen локально";
   try {
     let json: unknown;
     let model: string;
@@ -72,6 +84,15 @@ export async function POST(req: NextRequest) {
       model = r.model;
     } else if (provider === "qwen") {
       const r = await generateFoodJsonViaQwen((process.env.HF_TOKEN || "").trim(), base64, mime);
+      json = r.json;
+      model = r.model;
+    } else if (provider === "openrouter") {
+      const r = await generateFoodJsonViaOpenRouter(
+        (process.env.OPENROUTER_KEY || "").trim(),
+        (process.env.OPENROUTER_MODEL || "qwen/qwen2.5-vl-72b-instruct:free").trim(),
+        base64,
+        mime
+      );
       json = r.json;
       model = r.model;
     } else {
@@ -91,8 +112,11 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     console.error("analyze-food:", e instanceof Error ? e.message : e);
     const msg = e instanceof Error ? e.message : "";
-    if (/bad_token/i.test(msg))
-      return NextResponse.json({ error: msg.replace(/^bad_token:\s*/, "") }, { status: 401 });
+    if (/bad_token|no_credits/i.test(msg))
+      return NextResponse.json(
+        { error: msg.replace(/^(bad_token|no_credits):\s*/, "") },
+        { status: /no_credits/i.test(msg) ? 402 : 401 }
+      );
     if (/^(model_missing|ollama_down|ollama_timeout):/.test(msg))
       return NextResponse.json({ error: msg.replace(/^[a-z_]+:\s*/, "") }, { status: 503 });
     if (/429|quota|rate|лимит/i.test(msg))

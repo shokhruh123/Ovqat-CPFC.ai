@@ -28,7 +28,7 @@ export interface FoodAnalysisResult {
   short_advice: string;
   /** Служебные поля от сервера: каким движком посчитано. */
   _model?: string;
-  _provider?: "ollama" | "qwen" | "gemini";
+  _provider?: "gemini" | "ollama" | "qwen" | "openrouter";
 }
 
 export interface AnalyzeError {
