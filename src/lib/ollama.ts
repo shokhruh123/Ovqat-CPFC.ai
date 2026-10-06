@@ -26,11 +26,27 @@ export interface OllamaResult {
 export async function generateFoodJsonViaOllama(
   base64: string,
   host: string,
-  model: string,
+  models: string[],
   timeoutMs = 300000
 ): Promise<OllamaResult> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let lastErr = "no model answered";
+  for (const model of models) {
+    try {
+      return await once(base64, host, model, timeoutMs);
+    } catch (e) {
+      lastErr = `${model}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 160);
+      continue; // 2B не справилась — пробуем следующую (мощную)
+    }
+  }
+  throw new Error(lastErr);
+}
+
+async function once(
+  base64: string,
+  host: string,
+  model: string,
+  timeoutMs: number
+): Promise<OllamaResult> {
   try {
     const r = await fetch(`${host.replace(/\/$/, "")}/api/chat`, {
       method: "POST",

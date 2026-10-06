@@ -100,10 +100,16 @@ export async function POST(req: NextRequest) {
       json = r.json;
       model = r.model;
     } else {
+      // Локальная цепочка: сначала лёгкая 2B, не справилась — тяжёлая 30B MoE.
+      // Включается только при AI_PROVIDER=ollama (например, после переезда в датацентр).
+      const models = [
+        (process.env.OLLAMA_MODEL || "").trim(),
+        (process.env.OLLAMA_MODEL_FALLBACK || "").trim(),
+      ].filter(Boolean);
       const r = await generateFoodJsonViaOllama(
         base64,
         process.env.OLLAMA_HOST || "http://localhost:11434",
-        process.env.OLLAMA_MODEL || "qwen3-vl:2b-instruct"
+        models.length > 0 ? models : ["qwen3-vl:2b-instruct"]
       );
       json = r.json;
       model = r.model;
